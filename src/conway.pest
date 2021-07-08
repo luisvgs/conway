@@ -1,0 +1,23 @@
+Program = _{ SOI ~ "\n"* ~ (Expr ~ "\n"+) * ~ Expr? ~ EOF }
+
+/* Program = { Expr ~ (EOF ~ "\n"* ~ Expr)* } */
+Expr = { Literal | Unary }
+Literal = { Str | Integer | Boolean }
+
+Boolean = @{ True | False }
+True = { "true" }
+False = { "false" }
+
+Str = @{ "'" ~ ( "''" | (!"'" ~ ANY) )* ~ "'" }
+
+Integer = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+
+Unary = { Operator ~ Literal }
+
+/* Binary = { Literal ~ (Operator ~ Literal)* } */
+
+Operator = { "+" | "-" | "&&" | "||" | "!" }
+
+
+
+EOF = _{ "\n" | ";" | EOI }
