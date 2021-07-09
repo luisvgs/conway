@@ -18,12 +18,14 @@ use parser::*;
 #[grammar = "conway.pest"]
 pub struct ConwayParser;
 
+/// Grammar's AST representation
 #[derive(PartialEq, Debug, Clone)]
 pub enum AstNode {
     Literal(Value),
     Expression(Expression),
 }
 
+/// Get operator utility function
 pub fn get_operator(pair: pest::iterators::Pair<Rule>) -> Operator {
     match pair.as_str() {
         "+" => Operator::Plus,
@@ -32,6 +34,7 @@ pub fn get_operator(pair: pest::iterators::Pair<Rule>) -> Operator {
     }
 }
 
+/// Consumes a given Rule and returns its representation in the AST
 pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
         Rule::Expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
@@ -56,12 +59,13 @@ pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
     }
 }
 
+/// Consumes a Rule, and run any of the following parsers if it matches.
 pub fn build_ast_from_literal(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
         Rule::Str => string_parser(pair),
         Rule::Integer => number_parser(pair),
         Rule::Boolean => boolean_parser(pair),
-        unknown => panic!("Unknown expr: {:?}", unknown),
+        unknown => panic!("Unknown expression: {:?}", unknown),
     }
 }
 
@@ -80,6 +84,8 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
     Ok(ast)
 }
 
+/// Interpreter just to hold the evaluation logic.
+/// The eval function takes an AST node and returns its representation as a Conway value.
 pub struct Interpreter {}
 impl Interpreter {
     pub fn eval(&self, node: &AstNode) -> Value {
@@ -142,6 +148,7 @@ fn main() {
     }
 }
 
+/// Some tests. Might need to separate them in a different file later.
 #[cfg(test)]
 mod tests {
     use super::*;
