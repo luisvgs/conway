@@ -1,7 +1,7 @@
-Program = _{ SOI ~ "\n"* ~ (Expr ~ "\n"+) * ~ Expr? ~ EOF }
+Program = _{ SOI ~ "\n"* ~ (Expr ~ "\n"+)* ~ Expr? ~ EOF }
 
 /* Program = { Expr ~ (EOF ~ "\n"* ~ Expr)* } */
-Expr = { Literal | Unary }
+Expr = { Literal | Unary | Binary }
 Literal = { Str | Integer | Boolean }
 
 Boolean = @{ True | False }
@@ -14,9 +14,9 @@ Integer = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 
 Unary = { Operator ~ Literal }
 
-/* Binary = { Literal ~ (Operator ~ Literal)* } */
+Binary = { Literal ~ (Operator ~ Literal)* }
 
-Operator = { "+" | "-" | "&&" | "||" | "!" }
+Operator = { "+" | "-" } 
 
 
 

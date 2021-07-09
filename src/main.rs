@@ -5,35 +5,18 @@ extern crate pest_derive;
 use pest::error::Error;
 use pest::Parser;
 
+pub mod expression;
+use expression::*;
+
 pub mod value;
-use value::{Value, Operator};
+use value::{Operator, Value};
+
+pub mod parser;
+use parser::*;
 
 #[derive(Parser)]
 #[grammar = "conway.pest"]
-struct ConwayParser;
-
-pub fn boolean_parser(bool_node: pest::iterators::Pair<Rule>) -> AstNode {
-    AstNode::Literal(Value::Boolean(bool_node.as_str().parse::<bool>().unwrap()))
-}
-
-pub fn string_parser(string_node: pest::iterators::Pair<Rule>) -> AstNode {
-    AstNode::Literal(Value::Str(string_node.as_str().into()))
-}
-
-pub fn number_parser(number_node: pest::iterators::Pair<Rule>) -> AstNode {
-    AstNode::Literal(Value::Int(number_node.as_str().parse::<i32>().unwrap()))
-}
-
-pub fn unary_parser(pair: pest::iterators::Pair<Rule>, child: AstNode) -> AstNode {
-    AstNode::Expression(Expression::Unary {
-        op: match pair.as_str() {
-            "+" => Operator::Plus,
-            "-" => Operator::Minus,
-            _ => unreachable!(),
-        },
-        child: Box::new(child),
-    })
-}
+pub struct ConwayParser;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum AstNode {
@@ -41,13 +24,12 @@ pub enum AstNode {
     Expression(Expression),
 }
 
-
-#[derive(PartialEq, Debug, Clone)]
-pub enum Expression {
-    Unary {
-        op: Operator,
-        child: Box<AstNode>,
-    },
+pub fn get_operator(pair: pest::iterators::Pair<Rule>) -> Operator {
+    match pair.as_str() {
+        "+" => Operator::Plus,
+        "-" => Operator::Minus,
+        _ => unreachable!(),
+    }
 }
 
 pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
@@ -64,6 +46,12 @@ pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
             }
             _ => unreachable!(),
         },
+        Rule::Binary => {
+            let lhs = build_ast_from_literal(pair.clone().into_inner().next().unwrap());
+            let op = get_operator(pair.clone().into_inner().next().unwrap());
+            let rhs = build_ast_from_literal(pair.clone().into_inner().next().unwrap());
+            binary_parser(op, lhs, rhs)
+        }
         unknown => panic!("Unknown expr: {:?}", unknown),
     }
 }
@@ -97,17 +85,50 @@ impl Interpreter {
     pub fn eval(&self, node: &AstNode) -> Value {
         match node {
             AstNode::Literal(l) => match l {
-                Value::Str(l) => Value::Str(l.to_string()),
-                Value::Int(l) => Value::Int(*l),
+                Value::Str(s) => Value::Str(s.to_string()),
+                Value::Int(i) => Value::Int(*i),
                 Value::Boolean(b) => Value::Boolean(*b),
-            },
-            AstNode::Expression(Expression::Unary { op, child }) => {
+            }
+            AstNode::Expression(Expression::Unary(Unary { op, child })) => {
                 let child = self.eval(&child);
                 match op {
                     Operator::Plus => child,
                     Operator::Minus => -child,
                 }
-            },
+            }
+            AstNode::Expression(Expression::Binary(Binary { op, lhs, rhs })) => {
+                let lhs_ret = self.eval(&lhs);
+                let rhs_ret = self.eval(&rhs);
+
+                match op {
+                    Operator::Plus => {
+                        let x: i32 = match lhs_ret {
+                            Value::Int(x) => x,
+                            _ => panic!(),
+                        };
+
+                        let y: i32 = match rhs_ret {
+                            Value::Int(y) => y,
+                            _ => panic!(),
+                        };
+
+                        Value::Int(x + y)
+                    }
+
+                    Operator::Minus => {
+                        let x: i32 = match lhs_ret {
+                            Value::Int(x) => x,
+                            _ => panic!(),
+                        };
+
+                        let y: i32 = match rhs_ret {
+                            Value::Int(y) => y,
+                            _ => panic!(),
+                        };
+                        Value::Int(x - y)
+                    }
+                }
+            }
         }
     }
 }
@@ -126,14 +147,69 @@ mod tests {
     use super::*;
 
     #[test]
-    fn numer_parses() {
+    fn got_true() {
         let int = Interpreter {};
 
-        let ast_node: Vec<AstNode> = parse("133")
+        let ast_node: Vec<AstNode> = parse("true")
             .map_err(|e| format!("An error has ocurred {}", e))
             .unwrap();
 
-        let expected = vec![Value::Int(133)];
+        let expected = vec![Value::Boolean(true)];
+        for (node, expected_value) in ast_node.into_iter().zip(expected) {
+            assert_eq!(int.eval(&node), expected_value);
+        }
+    }
+
+    #[test]
+    fn got_false() {
+        let int = Interpreter {};
+
+        let ast_node: Vec<AstNode> = parse("false")
+            .map_err(|e| format!("An error has ocurred {}", e))
+            .unwrap();
+
+        let expected = vec![Value::Boolean(false)];
+        for (node, expected_value) in ast_node.into_iter().zip(expected) {
+            assert_eq!(int.eval(&node), expected_value);
+        }
+    }
+
+    #[test]
+    fn integer_parses() {
+        let int = Interpreter {};
+
+        let ast_node: Vec<AstNode> = parse("1285")
+            .map_err(|e| format!("An error has ocurred {}", e))
+            .unwrap();
+
+        let expected = vec![Value::Int(1285)];
+        for (node, expected_value) in ast_node.into_iter().zip(expected) {
+            assert_eq!(int.eval(&node), expected_value);
+        }
+    }
+
+    #[test]
+    fn negative_parses() {
+        let int = Interpreter {};
+
+        let ast_node: Vec<AstNode> = parse("-41")
+            .map_err(|e| format!("An error has ocurred {}", e))
+            .unwrap();
+
+        let expected = vec![Value::Int(-41)];
+        for (node, expected_value) in ast_node.into_iter().zip(expected) {
+            assert_eq!(int.eval(&node), expected_value);
+        }
+    }
+    #[test]
+    fn binary_parses() {
+        let int = Interpreter {};
+
+        let ast_node: Vec<AstNode> = parse("55+13;")
+            .map_err(|e| format!("An error has ocurred {}", e))
+            .unwrap();
+
+        let expected = vec![Value::Int(68)];
         for (node, expected_value) in ast_node.into_iter().zip(expected) {
             assert_eq!(int.eval(&node), expected_value);
         }
