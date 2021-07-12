@@ -38,7 +38,7 @@ pub fn get_operator(pair: pest::iterators::Pair<Rule>) -> Operator {
 pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
         Rule::Expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
-        Rule::Literal => build_ast_from_literal(pair.into_inner().next().unwrap()),
+        Rule::Literal => build_ast_from_literal(pair),
         Rule::Unary => match pair.as_rule() {
             Rule::Operator => {
                 let mut pair = pair.into_inner();
@@ -50,9 +50,10 @@ pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
             _ => unreachable!(),
         },
         Rule::Binary => {
-            let lhs = build_ast_from_literal(pair.clone().into_inner().next().unwrap());
-            let op = get_operator(pair.clone().into_inner().next().unwrap());
-            let rhs = build_ast_from_literal(pair.clone().into_inner().next().unwrap());
+            let mut binary_expr = pair.into_inner();
+            let lhs = build_ast_from_literal(binary_expr.next().unwrap());
+            let op = get_operator(binary_expr.next().unwrap());
+            let rhs = build_ast_from_literal(binary_expr.next().unwrap());
             binary_parser(op, lhs, rhs)
         }
         unknown => panic!("Unknown expr: {:?}", unknown),
@@ -60,11 +61,12 @@ pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
 }
 
 /// Consumes a Rule, and run any of the following parsers if it matches.
-pub fn build_ast_from_literal(pair: pest::iterators::Pair<Rule>) -> AstNode {
-    match pair.as_rule() {
-        Rule::Str => string_parser(pair),
-        Rule::Integer => number_parser(pair),
-        Rule::Boolean => boolean_parser(pair),
+pub fn build_ast_from_literal(literal: pest::iterators::Pair<Rule>) -> AstNode {
+    let inner = literal.into_inner().next().unwrap();
+    match inner.as_rule() {
+        Rule::Str => string_parser(inner),
+        Rule::Integer => number_parser(inner),
+        Rule::Boolean => boolean_parser(inner),
         unknown => panic!("Unknown expression: {:?}", unknown),
     }
 }
@@ -94,7 +96,7 @@ impl Interpreter {
                 Value::Str(s) => Value::Str(s.to_string()),
                 Value::Int(i) => Value::Int(*i),
                 Value::Boolean(b) => Value::Boolean(*b),
-            }
+            },
             AstNode::Expression(Expression::Unary(Unary { op, child })) => {
                 let child = self.eval(&child);
                 match op {
