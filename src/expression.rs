@@ -5,6 +5,12 @@ use crate::value::*;
 pub enum Expression {
     Unary(Unary),
     Binary(Binary),
+    Assignment(Assignment)
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct Assignment {
+    identifier: String,
 }
 
 #[derive(PartialEq, Debug, Clone)]
