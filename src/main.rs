@@ -34,37 +34,44 @@ pub fn get_operator(pair: pest::iterators::Pair<Rule>) -> Operator {
     }
 }
 
+pub fn build_ast_from_unary(literal: pest::iterators::Pair<Rule>) -> AstNode {
+    let pair = literal.into_inner().next().unwrap();
+    println!("{:?}", pair);
+    match pair.as_rule() {
+        Rule::Operator => {
+            let mut pair = pair.into_inner();
+            let op = pair.next().unwrap();
+            let child = pair.next().unwrap();
+            let child = build_ast_from_literal(child);
+            unary_parser(op, child)
+        },
+        Rule::Unary => build_ast_from_expr(pair),
+        Rule::Literal => build_ast_from_literal(pair),
+        unknown => panic!("Unknown expression: {:?}", unknown),
+    }
+}
+
 /// Consumes a given Rule and returns its representation in the AST
 pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
         Rule::Expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
-        Rule::Literal => build_ast_from_literal(pair),
-        Rule::Unary => match pair.as_rule() {
-            Rule::Operator => {
-                let mut pair = pair.into_inner();
-                let op = pair.next().unwrap();
-                let child = pair.next().unwrap();
-                let child = build_ast_from_literal(child);
-                unary_parser(op, child)
-            }
-            _ => unreachable!(),
-        },
-        Rule::Binary => {
-            let mut binary_expr = pair.into_inner();
-            let lhs = build_ast_from_literal(binary_expr.next().unwrap());
-            let op = get_operator(binary_expr.next().unwrap());
-            let rhs = build_ast_from_literal(binary_expr.next().unwrap());
-            binary_parser(op, lhs, rhs)
-        },
-        Rule::Assignment => {
-            let mut assignment_expr = pair.into_inner();
-            let _let_keyword = assignment_expr.next().unwrap();
-            let identifier = assignment_expr.next().unwrap();
-            AstNode::Expression(Expression::Assignment(Assignment{
-                identifier: identifier.to_string(),
-            }))
-
-        }
+        Rule::Unary => build_ast_from_unary(pair),
+        // Rule::Binary => {
+        //     let mut binary_expr = pair.into_inner();
+        //     let lhs = build_ast_from_literal(binary_expr.next().unwrap());
+        //     let op = get_operator(binary_expr.next().unwrap());
+        //     let rhs = build_ast_from_literal(binary_expr.next().unwrap());
+        //     binary_parser(op, lhs, rhs)
+        // }
+        // Rule::Assignment => {
+        //     // Not tested yet.
+        //     let mut assignment_expr = pair.into_inner();
+        //     let _let_keyword = assignment_expr.next().unwrap();
+        //     let identifier = assignment_expr.next().unwrap();
+        //     AstNode::Expression(Expression::Assignment(Assignment {
+        //         identifier: identifier.to_string(),
+        //     }))
+        // }
         unknown => panic!("Unknown expr: {:?}", unknown),
     }
 }
@@ -101,12 +108,14 @@ pub struct Interpreter {}
 impl Interpreter {
     pub fn eval(&self, node: &AstNode) -> Value {
         match node {
-            AstNode::Expression(Expression::Assignment(Assignment { identifier })) => self.eval(identifier),
+            // AstNode::Expression(Expression::Assignment(Assignment { identifier })) => {
+            //     Value::Str(identifier.to_string())
+            // }
             AstNode::Literal(l) => match l {
                 Value::Str(s) => Value::Str(s.to_string()),
                 Value::Int(i) => Value::Int(*i),
                 Value::Boolean(b) => Value::Boolean(*b),
-            }
+            },
             AstNode::Expression(Expression::Unary(Unary { op, child })) => {
                 let child = self.eval(&child);
                 match op {
@@ -114,39 +123,39 @@ impl Interpreter {
                     Operator::Minus => -child,
                 }
             }
-            AstNode::Expression(Expression::Binary(Binary { op, lhs, rhs })) => {
-                let lhs_ret = self.eval(&lhs);
-                let rhs_ret = self.eval(&rhs);
+            // AstNode::Expression(Expression::Binary(Binary { op, lhs, rhs })) => {
+            //     let lhs_ret = self.eval(&lhs);
+            //     let rhs_ret = self.eval(&rhs);
 
-                match op {
-                    Operator::Plus => {
-                        let x: i32 = match lhs_ret {
-                            Value::Int(x) => x,
-                            _ => panic!(),
-                        };
+            //     match op {
+            //         Operator::Plus => {
+            //             let x: i32 = match lhs_ret {
+            //                 Value::Int(x) => x,
+            //                 _ => panic!(),
+            //             };
 
-                        let y: i32 = match rhs_ret {
-                            Value::Int(y) => y,
-                            _ => panic!(),
-                        };
+            //             let y: i32 = match rhs_ret {
+            //                 Value::Int(y) => y,
+            //                 _ => panic!(),
+            //             };
 
-                        Value::Int(x + y)
-                    }
+            //             Value::Int(x + y)
+            //         }
 
-                    Operator::Minus => {
-                        let x: i32 = match lhs_ret {
-                            Value::Int(x) => x,
-                            _ => panic!(),
-                        };
+            //         Operator::Minus => {
+            //             let x: i32 = match lhs_ret {
+            //                 Value::Int(x) => x,
+            //                 _ => panic!(),
+            //             };
 
-                        let y: i32 = match rhs_ret {
-                            Value::Int(y) => y,
-                            _ => panic!(),
-                        };
-                        Value::Int(x - y)
-                    }
-                }
-            }
+            //             let y: i32 = match rhs_ret {
+            //                 Value::Int(y) => y,
+            //                 _ => panic!(),
+            //             };
+            //             Value::Int(x - y)
+            //         }
+            //     }
+            // }
         }
     }
 }
