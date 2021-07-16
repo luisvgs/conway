@@ -38,8 +38,20 @@ impl std::ops::Add for Value {
     }
 }
 
+impl std::ops::Not for Value {
+    type Output = Self;
+    fn not(self) -> Self {
+        match self {
+            Self::Boolean(b) => Value::Boolean(!b),
+            _ => unreachable!()
+        }
+    }
+}
+
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Operator {
     Minus,
     Plus,
+    Bang,
 }

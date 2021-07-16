@@ -4,7 +4,7 @@ use crate::value::*;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Expression {
     Unary(Unary),
-    // Binary(Binary),
+    Binary(Binary),
     // Assignment(Assignment)
 }
 
@@ -19,9 +19,9 @@ pub struct Unary {
     pub child: Box<AstNode>,
 }
 
-// #[derive(PartialEq, Debug, Clone)]
-// pub struct Binary {
-//     pub lhs: Box<AstNode>,
-//     pub op: Operator,
-//     pub rhs: Box<AstNode>,
-// }
+#[derive(PartialEq, Debug, Clone)]
+pub struct Binary {
+    pub lhs: Box<AstNode>,
+    pub op: Operator,
+    pub rhs: Box<AstNode>,
+}

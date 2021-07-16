@@ -23,17 +23,18 @@ pub fn unary_parser(pair: pest::iterators::Pair<Rule>, child: AstNode) -> AstNod
         op: match pair.as_str() {
             "+" => Operator::Plus,
             "-" => Operator::Minus,
+            "!" => Operator::Bang,
             _ => unreachable!(),
         },
         child: Box::new(child),
     }))
 }
 
-// Parses the Rule to get a binary expression Node
-// pub fn binary_parser(op: Operator, lhs: AstNode, rhs: AstNode) -> AstNode {
-//     AstNode::Expression(Expression::Binary(Binary {
-//         lhs: Box::new(lhs),
-//         op,
-//         rhs: Box::new(rhs),
-//     }))
-// }
+///Parses the Rule to get a binary expression Node
+pub fn binary_parser(op: Operator, lhs: AstNode, rhs: AstNode) -> AstNode {
+    AstNode::Expression(Expression::Binary(Binary {
+        lhs: Box::new(lhs),
+        op,
+        rhs: Box::new(rhs),
+    }))
+}
