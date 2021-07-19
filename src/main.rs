@@ -43,28 +43,38 @@ pub fn build_ast_from_unary(literal: pest::iterators::Pair<Rule>) -> AstNode {
     unary_parser(op, child)
 }
 
+fn parse_assignment(expr: pest::iterators::Pair<Rule>) -> AstNode {
+    let mut identifier = String::new();
+    let mut val = Box::new(AstNode::Expression(Expression::Null));
+
+    for node in expr.into_inner() {
+        match node.as_rule() {
+            Rule::Identifier => identifier = String::from(node.as_str()),
+            Rule::Expr => {
+                val = Box::new(build_ast_from_expr(node));
+            },
+            _ => unreachable!(),
+        }
+    }
+
+    AstNode::Expression(Expression::Assignment(Assignment { identifier, value: val}))
+}
+
 /// Consumes a given Rule and returns its representation in the AST
 pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
+        Rule::Statement => build_ast_from_expr(pair.into_inner().next().unwrap()),
         Rule::Expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
         Rule::Unary => build_ast_from_unary(pair),
         Rule::Literal => build_ast_from_literal(pair),
-        Rule::Binary => {
-            let mut binary_expr = pair.into_inner();
-            let lhs = build_ast_from_literal(binary_expr.next().unwrap());
-            let op = get_operator(binary_expr.next().unwrap());
-            let rhs = build_ast_from_literal(binary_expr.next().unwrap());
-            binary_parser(op, lhs, rhs)
-        }
-        // Rule::Assignment => {
-        //     // Not tested yet.
-        //     let mut assignment_expr = pair.into_inner();
-        //     let _let_keyword = assignment_expr.next().unwrap();
-        //     let identifier = assignment_expr.next().unwrap();
-        //     AstNode::Expression(Expression::Assignment(Assignment {
-        //         identifier: identifier.to_string(),
-        //     }))
+        // Rule::Binary => {
+        //     let mut binary_expr = pair.into_inner();
+        //     let lhs = build_ast_from_literal(binary_expr.next().unwrap());
+        //     let op = get_operator(binary_expr.next().unwrap());
+        //     let rhs = build_ast_from_literal(binary_expr.next().unwrap());
+        //     binary_parser(op, lhs, rhs)
         // }
+        Rule::Assignment => parse_assignment(pair),
         unknown => panic!("Unknown expr: {:?}", unknown),
     }
 }
@@ -87,7 +97,7 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
     dbg!(&pairs);
     for pair in pairs {
         match pair.as_rule() {
-            Rule::Expr => {
+            Rule::Statement => {
                 ast.push(build_ast_from_expr(pair));
             }
             _ => {}
@@ -102,9 +112,9 @@ pub struct Interpreter {}
 impl Interpreter {
     pub fn eval(&self, node: &AstNode) -> Value {
         match node {
-            // AstNode::Expression(Expression::Assignment(Assignment { identifier })) => {
-            //     Value::Str(identifier.to_string())
-            // }
+            AstNode::Expression(Expression::Assignment(Assignment { identifier, value })) => {
+                self.eval(value)
+            }
             AstNode::Literal(l) => match l {
                 Value::Str(s) => Value::Str(s.to_string()),
                 Value::Int(i) => Value::Int(*i),
@@ -118,40 +128,41 @@ impl Interpreter {
                     Operator::Bang => !child,
                 }
             }
-            AstNode::Expression(Expression::Binary(Binary { op, lhs, rhs })) => {
-                let lhs_ret = self.eval(&lhs);
-                let rhs_ret = self.eval(&rhs);
+            _ => unreachable!()
+            // AstNode::Expression(Expression::Binary(Binary { op, lhs, rhs })) => {
+              //     let lhs_ret = self.eval(&lhs);
+              //     let rhs_ret = self.eval(&rhs);
 
-                match op {
-                    Operator::Plus => {
-                        let x: i32 = match lhs_ret {
-                            Value::Int(x) => x,
-                            _ => panic!(),
-                        };
+              //     match op {
+              //         Operator::Plus => {
+              //             let x: i32 = match lhs_ret {
+              //                 Value::Int(x) => x,
+              //                 _ => panic!(),
+              //             };
 
-                        let y: i32 = match rhs_ret {
-                            Value::Int(y) => y,
-                            _ => panic!(),
-                        };
+              //             let y: i32 = match rhs_ret {
+              //                 Value::Int(y) => y,
+              //                 _ => panic!(),
+              //             };
 
-                        Value::Int(x + y)
-                    }
+              //             Value::Int(x + y)
+              //         }
 
-                    Operator::Minus => {
-                        let x: i32 = match lhs_ret {
-                            Value::Int(x) => x,
-                            _ => panic!(),
-                        };
+              //         Operator::Minus => {
+              //             let x: i32 = match lhs_ret {
+              //                 Value::Int(x) => x,
+              //                 _ => panic!(),
+              //             };
 
-                        let y: i32 = match rhs_ret {
-                            Value::Int(y) => y,
-                            _ => panic!(),
-                        };
-                        Value::Int(x - y)
-                    }
-                    _ => unreachable!(),
-                }
-            }
+              //             let y: i32 = match rhs_ret {
+              //                 Value::Int(y) => y,
+              //                 _ => panic!(),
+              //             };
+              //             Value::Int(x - y)
+              //         }
+              //         _ => unreachable!(),
+              //     }
+              // }
         }
     }
 }
@@ -165,77 +176,3 @@ fn main() {
     }
 }
 
-/// Some tests. Might need to separate them in a different file later.
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn got_true() {
-        let int = Interpreter {};
-
-        let ast_node: Vec<AstNode> = parse("true")
-            .map_err(|e| format!("An error has ocurred {}", e))
-            .unwrap();
-
-        let expected = vec![Value::Boolean(true)];
-        for (node, expected_value) in ast_node.into_iter().zip(expected) {
-            assert_eq!(int.eval(&node), expected_value);
-        }
-    }
-
-    #[test]
-    fn got_false() {
-        let int = Interpreter {};
-
-        let ast_node: Vec<AstNode> = parse("false")
-            .map_err(|e| format!("An error has ocurred {}", e))
-            .unwrap();
-
-        let expected = vec![Value::Boolean(false)];
-        for (node, expected_value) in ast_node.into_iter().zip(expected) {
-            assert_eq!(int.eval(&node), expected_value);
-        }
-    }
-
-    #[test]
-    fn integer_parses() {
-        let int = Interpreter {};
-
-        let ast_node: Vec<AstNode> = parse("1285")
-            .map_err(|e| format!("An error has ocurred {}", e))
-            .unwrap();
-
-        let expected = vec![Value::Int(1285)];
-        for (node, expected_value) in ast_node.into_iter().zip(expected) {
-            assert_eq!(int.eval(&node), expected_value);
-        }
-    }
-
-    #[test]
-    fn negative_parses() {
-        let int = Interpreter {};
-
-        let ast_node: Vec<AstNode> = parse("-41")
-            .map_err(|e| format!("An error has ocurred {}", e))
-            .unwrap();
-
-        let expected = vec![Value::Int(-41)];
-        for (node, expected_value) in ast_node.into_iter().zip(expected) {
-            assert_eq!(int.eval(&node), expected_value);
-        }
-    }
-    #[test]
-    fn binary_parses() {
-        let int = Interpreter {};
-
-        let ast_node: Vec<AstNode> = parse("55+13;")
-            .map_err(|e| format!("An error has ocurred {}", e))
-            .unwrap();
-
-        let expected = vec![Value::Int(68)];
-        for (node, expected_value) in ast_node.into_iter().zip(expected) {
-            assert_eq!(int.eval(&node), expected_value);
-        }
-    }
-}

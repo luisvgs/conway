@@ -30,11 +30,11 @@ pub fn unary_parser(pair: pest::iterators::Pair<Rule>, child: AstNode) -> AstNod
     }))
 }
 
-///Parses the Rule to get a binary expression Node
-pub fn binary_parser(op: Operator, lhs: AstNode, rhs: AstNode) -> AstNode {
-    AstNode::Expression(Expression::Binary(Binary {
-        lhs: Box::new(lhs),
-        op,
-        rhs: Box::new(rhs),
-    }))
-}
+//Parses the Rule to get a binary expression Node
+// pub fn binary_parser(op: Operator, lhs: AstNode, rhs: AstNode) -> AstNode {
+//     AstNode::Expression(Expression::Binary(Binary {
+//         lhs: Box::new(lhs),
+//         op,
+//         rhs: Box::new(rhs),
+//     }))
+// }

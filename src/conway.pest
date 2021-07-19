@@ -1,21 +1,24 @@
-Program = _{ SOI ~ "\n"* ~ (Expr ~ "\n"*)* ~ EOF }
+Program = _{ SOI ~ "\n"* ~ (Statement~ "\n"*)* ~ EOF }
 
-Expr = { Unary | Literal | Binary }
+Statement = { Expr }
+Expr = { Unary | Literal | Assignment }
 Literal = { Str | Integer | Boolean }
 
 Boolean = @{ True | False }
 True = { "true" }
 False = { "false" }
 
-/* Assignment = { "let" ~ Identifier } */
-Identifier = @{ (ASCII_ALPHA ~ ASCII_ALPHANUMERIC*) }
+Assignment = { "let" ~ Identifier ~ "=" ~ Expr }
+Identifier = { (ASCII_ALPHA ~ ASCII_ALPHANUMERIC*) }
 
 Str = @{ "'" ~ ( "''" | (!"'" ~ ANY) )* ~ "'" }
 
 Integer = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 
 Unary = { Operator ~ Literal }
-Binary = { Literal ~ (Operator ~ Literal)* }
+/* Binary = { Literal ~ (Operator ~ Literal)* } */
 Operator = { "+" | "-" | "!"} 
+
+WHITESPACE = _{ " " | "\t" | "\\\n" }
 
 EOF = _{ "\n" | ";" | EOI }
