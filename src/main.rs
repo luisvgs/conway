@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
@@ -5,8 +7,14 @@ extern crate pest_derive;
 use pest::error::Error;
 use pest::Parser;
 
+pub mod conway;
+use conway::*;
+
 pub mod expression;
 use expression::*;
+
+pub mod environment;
+use environment::*;
 
 pub mod value;
 use value::{Operator, Value};
@@ -43,7 +51,7 @@ pub fn build_ast_from_unary(literal: pest::iterators::Pair<Rule>) -> AstNode {
     unary_parser(op, child)
 }
 
-fn parse_assignment(expr: pest::iterators::Pair<Rule>) -> AstNode {
+fn parse_variable(expr: pest::iterators::Pair<Rule>) -> AstNode {
     let mut identifier = String::new();
     let mut val = Box::new(AstNode::Expression(Expression::Null));
 
@@ -52,12 +60,15 @@ fn parse_assignment(expr: pest::iterators::Pair<Rule>) -> AstNode {
             Rule::Identifier => identifier = String::from(node.as_str()),
             Rule::Expr => {
                 val = Box::new(build_ast_from_expr(node));
-            },
+            }
             _ => unreachable!(),
         }
     }
 
-    AstNode::Expression(Expression::Assignment(Assignment { identifier, value: val}))
+    AstNode::Expression(Expression::Variable(Variable{
+        identifier,
+        value: val,
+    }))
 }
 
 /// Consumes a given Rule and returns its representation in the AST
@@ -74,7 +85,7 @@ pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
         //     let rhs = build_ast_from_literal(binary_expr.next().unwrap());
         //     binary_parser(op, lhs, rhs)
         // }
-        Rule::Assignment => parse_assignment(pair),
+        Rule::Variable => parse_variable(pair),
         unknown => panic!("Unknown expr: {:?}", unknown),
     }
 }
@@ -94,7 +105,7 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
     let mut ast = vec![];
 
     let pairs = ConwayParser::parse(Rule::Program, source)?;
-    dbg!(&pairs);
+    // dbg!(&pairs);
     for pair in pairs {
         match pair.as_rule() {
             Rule::Statement => {
@@ -106,14 +117,17 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
     Ok(ast)
 }
 
-/// Interpreter just to hold the evaluation logic.
-/// The eval function takes an AST node and returns its representation as a Conway value.
-pub struct Interpreter {}
+pub struct Interpreter {
+    env: Environment,
+}
+
 impl Interpreter {
-    pub fn eval(&self, node: &AstNode) -> Value {
+    pub fn eval(&mut self, node: &AstNode) -> Value {
         match node {
-            AstNode::Expression(Expression::Assignment(Assignment { identifier, value })) => {
-                self.eval(value)
+            AstNode::Expression(Expression::Variable( Variable { identifier, value })) => {
+                let val = self.eval(value);
+                self.env.define(identifier.clone(), val.clone());
+                val
             }
             AstNode::Literal(l) => match l {
                 Value::Str(s) => Value::Str(s.to_string()),
@@ -128,51 +142,47 @@ impl Interpreter {
                     Operator::Bang => !child,
                 }
             }
-            _ => unreachable!()
-            // AstNode::Expression(Expression::Binary(Binary { op, lhs, rhs })) => {
-              //     let lhs_ret = self.eval(&lhs);
-              //     let rhs_ret = self.eval(&rhs);
+            _ => unreachable!(), // AstNode::Expression(Expression::Binary(Binary { op, lhs, rhs })) => {
+                                 //     let lhs_ret = self.eval(&lhs);
+                                 //     let rhs_ret = self.eval(&rhs);
 
-              //     match op {
-              //         Operator::Plus => {
-              //             let x: i32 = match lhs_ret {
-              //                 Value::Int(x) => x,
-              //                 _ => panic!(),
-              //             };
+                                 //     match op {
+                                 //         Operator::Plus => {
+                                 //             let x: i32 = match lhs_ret {
+                                 //                 Value::Int(x) => x,
+                                 //                 _ => panic!(),
+                                 //             };
 
-              //             let y: i32 = match rhs_ret {
-              //                 Value::Int(y) => y,
-              //                 _ => panic!(),
-              //             };
+                                 //             let y: i32 = match rhs_ret {
+                                 //                 Value::Int(y) => y,
+                                 //                 _ => panic!(),
+                                 //             };
 
-              //             Value::Int(x + y)
-              //         }
+                                 //             Value::Int(x + y)
+                                 //         }
 
-              //         Operator::Minus => {
-              //             let x: i32 = match lhs_ret {
-              //                 Value::Int(x) => x,
-              //                 _ => panic!(),
-              //             };
+                                 //         Operator::Minus => {
+                                 //             let x: i32 = match lhs_ret {
+                                 //                 Value::Int(x) => x,
+                                 //                 _ => panic!(),
+                                 //             };
 
-              //             let y: i32 = match rhs_ret {
-              //                 Value::Int(y) => y,
-              //                 _ => panic!(),
-              //             };
-              //             Value::Int(x - y)
-              //         }
-              //         _ => unreachable!(),
-              //     }
-              // }
+                                 //             let y: i32 = match rhs_ret {
+                                 //                 Value::Int(y) => y,
+                                 //                 _ => panic!(),
+                                 //             };
+                                 //             Value::Int(x - y)
+                                 //         }
+                                 //         _ => unreachable!(),
+                                 //     }
+                                 // }
         }
     }
 }
 
 fn main() {
-    let unparsed_file = std::fs::read_to_string("conway.cy").expect("cannot read conway file");
-    let astnode = parse(&unparsed_file).expect("unsuccessful parse");
-    let int = Interpreter {};
-    for node in astnode.into_iter() {
-        println!("{}", int.eval(&node));
-    }
+    let conway = Conway {};
+    conway.run()
+    // let unparsed_file = std::fs::read_to_string("conway.cy").expect("cannot read conway file");
+    // println!("{:?}", int.env.get_var("var".to_string()));
 }
-

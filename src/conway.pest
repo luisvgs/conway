@@ -1,14 +1,14 @@
 Program = _{ SOI ~ "\n"* ~ (Statement~ "\n"*)* ~ EOF }
 
 Statement = { Expr }
-Expr = { Unary | Literal | Assignment }
+Expr = { Unary | Literal | Variable }
 Literal = { Str | Integer | Boolean }
 
 Boolean = @{ True | False }
 True = { "true" }
 False = { "false" }
 
-Assignment = { "let" ~ Identifier ~ "=" ~ Expr }
+Variable = { "let" ~ Identifier ~ "=" ~ Expr }
 Identifier = { (ASCII_ALPHA ~ ASCII_ALPHANUMERIC*) }
 
 Str = @{ "'" ~ ( "''" | (!"'" ~ ANY) )* ~ "'" }

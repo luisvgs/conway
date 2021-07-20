@@ -1,1 +1,1 @@
-let variableX = -23
+let var = 23

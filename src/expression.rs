@@ -5,12 +5,12 @@ use crate::value::*;
 pub enum Expression {
     Unary(Unary),
     // Binary(Binary),
-    Assignment(Assignment),
+    Variable(Variable),
     Null
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Assignment {
+pub struct Variable {
     pub identifier: String,
     pub value: Box<AstNode>,
 }
