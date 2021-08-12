@@ -14,10 +14,10 @@ impl Conway {
             .read_line(&mut input_buffer)
             .expect("Failed to read stdin");
 
-        let astnode = parse(&&input_buffer).expect("unsuccessful parse");
+        let astnode = parser(&&input_buffer).expect("unsuccessful parse");
         let mut int = Interpreter { env: Environment::new() };
         for node in astnode.into_iter() {
-            println!("{}", int.eval(&node));
+            println!("{:?}", int.eval(&node));
         }
     }
 

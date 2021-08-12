@@ -1,15 +1,21 @@
-Program = _{ SOI ~ "\n"* ~ (Statement~ "\n"*)* ~ EOF }
+Program = _{ SOI ~ IGNORED* ~ (Statement~ IGNORED*)* ~ EOF }
+IGNORED = _{ (WHITESPACE|NEWLINE) }
 
-Statement = { Expr }
-Expr = { Unary | Literal | Variable }
+Statement = { Expr | Print }
+Print = { "print" ~ Expr }
+Expr = { Unary | Literal | Assignment | Variable | ReAssign | Identifier }
+
 Literal = { Str | Integer | Boolean }
+
+Variable = { "var" ~ IGNORED* ~ Identifier ~ (IGNORED* ~ "=" ~ IGNORED* ~ Expr)? }
+ReAssign = { Identifier ~ IGNORED* ~ "=" ~ IGNORED* ~ Expr }
 
 Boolean = @{ True | False }
 True = { "true" }
 False = { "false" }
 
-Variable = { "let" ~ Identifier ~ "=" ~ Expr }
-Identifier = { (ASCII_ALPHA ~ ASCII_ALPHANUMERIC*) }
+Assignment = { "let" ~ IGNORED* ~ Identifier ~ IGNORED* ~ "=" ~ IGNORED* ~ Expr }
+Identifier = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 
 Str = @{ "'" ~ ( "''" | (!"'" ~ ANY) )* ~ "'" }
 

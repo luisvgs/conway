@@ -4,13 +4,15 @@ use crate::value::*;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Expression {
     Unary(Unary),
+    Variable(String),
     // Binary(Binary),
-    Variable(Variable),
-    Null
+    Assignment(Assignment),
+    Null,
+    Identifier(String),
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Variable {
+pub struct Assignment {
     pub identifier: String,
     pub value: Box<AstNode>,
 }
@@ -21,6 +23,10 @@ pub struct Unary {
     pub child: Box<AstNode>,
 }
 
+#[derive(PartialEq, Debug, Clone)]
+pub struct Print {
+    pub expr: Box<AstNode>,
+}
 // #[derive(PartialEq, Debug, Clone)]
 // pub struct Binary {
 //     pub lhs: Box<AstNode>,

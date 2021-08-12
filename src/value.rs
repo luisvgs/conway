@@ -3,6 +3,8 @@ pub enum Value {
     Str(String),
     Int(i32),
     Boolean(bool),
+    Nothing,
+    Nil,
 }
 
 impl std::fmt::Display for Value {
@@ -11,6 +13,8 @@ impl std::fmt::Display for Value {
             Self::Int(x) => write!(f, "{:?}", *x),
             Self::Str(s) => write!(f, "{:?}", *s),
             Self::Boolean(b) => write!(f, "{:?}", *b),
+            Self::Nothing => write!(f, "Nothing"),
+            Self::Nil => write!(f, "Nil"),
         }
     }
 }

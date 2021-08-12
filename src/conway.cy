@@ -1,1 +1,3 @@
-let var = 23
+let a = 4
+a = 6
+a
