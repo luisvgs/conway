@@ -23,11 +23,12 @@ impl Interpreter {
             AstNode::Expression(Expression::Assignment(Assignment { identifier, value })) => {
                 let val = self.eval(value)?;
                 if self.env.vals.contains_key(identifier) {
-                    self.env.vals.insert(identifier.to_owned(), val);
-                    Ok(Value::Nothing)
+                    self.env.vals.insert(identifier.to_owned(), val.clone());
+                    Ok(val.clone())
+                    // Ok(Value::Nothing)
                 } else {  
-                    self.env.define(identifier.to_owned(), val);
-                    Ok(Value::Nil)
+                    self.env.define(identifier.to_owned(), val.clone());
+                    Ok(val.clone())
                 }
             }
             AstNode::Literal(l) => match l {

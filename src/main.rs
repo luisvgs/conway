@@ -7,6 +7,9 @@ extern crate pest_derive;
 use pest::error::Error;
 use pest::Parser;
 
+#[cfg(test)]
+pub mod conway_test;
+
 pub mod interpreter;
 use interpreter::*;
 

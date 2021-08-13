@@ -10,9 +10,9 @@ pub enum Value {
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Int(x) => write!(f, "{:?}", *x),
-            Self::Str(s) => write!(f, "{:?}", *s),
-            Self::Boolean(b) => write!(f, "{:?}", *b),
+            Self::Int(x) => write!(f, "{}", *x),
+            Self::Str(s) => write!(f, "{}", *s),
+            Self::Boolean(b) => write!(f, "{}", *b),
             Self::Nothing => write!(f, "Nothing"),
             Self::Nil => write!(f, "Nil"),
         }
