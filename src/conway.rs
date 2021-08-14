@@ -1,4 +1,6 @@
 use super::*;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct Conway {}
 impl Conway {
@@ -15,7 +17,7 @@ impl Conway {
             .expect("Failed to read stdin");
 
         let astnode = parser(&&input_buffer).expect("unsuccessful parse");
-        let mut int = Interpreter { env: Environment::new() };
+        let mut int = Interpreter { env: Rc::new(RefCell::new(Environment::new())) };
         for node in astnode.into_iter() {
             println!("{:?}", int.eval(&node));
         }

@@ -1,7 +1,8 @@
 Program = _{ SOI ~ IGNORED* ~ (Statement~ IGNORED*)* ~ EOF }
 IGNORED = _{ (WHITESPACE|NEWLINE) }
 
-Statement = { Expr | Print }
+Block = { "{" ~ Statement* ~ (IGNORED ~ Statement)* ~ IGNORED* ~ "}" }
+Statement = { Expr | Block | Print }
 Print = { "print" ~ Expr }
 Expr = { Unary | Literal | Assignment | Variable | ReAssign | Identifier }
 

@@ -24,6 +24,11 @@ pub struct Unary {
 }
 
 #[derive(PartialEq, Debug, Clone)]
+pub struct Block {
+    pub stmts: Vec<Box<AstNode>>
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub struct Print {
     pub expr: Box<AstNode>,
 }

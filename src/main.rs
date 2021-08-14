@@ -1,4 +1,6 @@
 use std::io::{self, Write};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 extern crate pest;
 #[macro_use]
@@ -56,9 +58,23 @@ pub fn build_ast_from_unary(literal: pest::iterators::Pair<Rule>) -> AstNode {
     let child = build_ast_from_literal(child_pair);
     unary_parser(op, child)
 }
+
+pub fn block_parser(pair: pest::iterators::Pair<Rule>) -> AstNode {
+    let mut block = Vec::new();
+    
+    for node in pair.into_inner() {
+        match node.as_rule() {
+            Rule::Statement => block.push(Box::new(build_ast_from_expr(node))),
+            _ => unreachable!(),
+        }
+    }
+
+    AstNode::Block(Block { stmts: block })
+}
 /// Consumes a given Rule and returns its representation in the AST
 pub fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
+        Rule::Block => block_parser(pair),
         Rule::Statement => build_ast_from_expr(pair.into_inner().next().unwrap()),
         Rule::Variable => variable_parser(pair),
         Rule::Expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
@@ -78,7 +94,7 @@ fn main() -> Result<()> {
     let unparsed_file = std::fs::read_to_string("conway.cy").expect("cannot read conway file");
     let astnode = parser(&unparsed_file).expect("unsuccessful parse");
     let mut int = Interpreter {
-        env: Environment::new(),
+        env: Rc::new(RefCell::new(Environment::new())),
     };
     
     for node in astnode.into_iter() {

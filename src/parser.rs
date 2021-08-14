@@ -103,8 +103,6 @@ pub fn print_parser(expr: pest::iterators::Pair<Rule>) -> AstNode {
     AstNode::Print(Print { expr: expression })
 }
 
-
-
 //Parses the Rule to get a binary expression Node
 // pub fn binary_parser(op: Operator, lhs: AstNode, rhs: AstNode) -> AstNode {
 //     AstNode::Expression(Expression::Binary(Binary {
