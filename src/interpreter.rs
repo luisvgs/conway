@@ -3,6 +3,7 @@ use super::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+// pub type ConwayResult<T> = std::result::Result<T, ConwayError>;
 
 #[derive(Debug)]
 pub struct Interpreter {
@@ -15,7 +16,7 @@ impl Interpreter {
         let mut value = Value::Nil;
 
         self.env = env;
-
+        
         for stmt in stmts {
             value = self.eval(stmt)?;
         }

@@ -2,7 +2,6 @@ extern crate pest;
 use super::*;
 use crate::value::*;
 
-
 #[derive(Parser)]
 #[grammar = "conway.pest"]
 pub struct ConwayParser;
@@ -52,7 +51,6 @@ pub fn unary_parser(pair: pest::iterators::Pair<Rule>, child: AstNode) -> AstNod
 
 pub fn variable_parser(expr: pest::iterators::Pair<Rule>) -> AstNode {
     let mut identifier = String::new();
-
     for node in expr.into_inner() {
         match node.as_rule() {
             Rule::Identifier => identifier = String::from(node.as_str()),
@@ -90,7 +88,7 @@ pub fn identifier_parser(pair: pest::iterators::Pair<Rule>) -> AstNode {
 
 pub fn print_parser(expr: pest::iterators::Pair<Rule>) -> AstNode {
     let mut expression = Box::new(AstNode::Expression(Expression::Null));
-
+    
     for node in expr.into_inner() {
         match node.as_rule() {
             Rule::Expr => {

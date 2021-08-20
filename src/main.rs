@@ -1,12 +1,13 @@
 use std::io::{self, Write};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::collections::HashMap;
 
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
-use pest::error::Error;
+use pest::error::{ ErrorVariant,Error };
 use pest::Parser;
 
 #[cfg(test)]
@@ -50,6 +51,7 @@ pub fn build_ast_from_literal(literal: pest::iterators::Pair<Rule>) -> AstNode {
         unknown => panic!("Unknown expression: {:?}", unknown),
     }
 }
+
 
 pub fn build_ast_from_unary(literal: pest::iterators::Pair<Rule>) -> AstNode {
     let mut pair = literal.into_inner();

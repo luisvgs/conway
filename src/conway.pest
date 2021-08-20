@@ -2,10 +2,15 @@ Program = _{ SOI ~ IGNORED* ~ (Statement~ IGNORED*)* ~ EOF }
 IGNORED = _{ (WHITESPACE|NEWLINE) }
 
 Block = { "{" ~ Statement* ~ (IGNORED ~ Statement)* ~ IGNORED* ~ "}" }
-Statement = { Expr | Block | Print }
+Statement = { function | Expr | Block | Print }
 Print = { "print" ~ Expr }
 Expr = { Unary | Literal | Assignment | Variable | ReAssign | Identifier }
 
+function                    =  { "fn" ~ Identifier ~ function_clause ~ ("," ~ function_clause)* }
+function_args               =  _{ "(" ~ (Identifier ~("," ~ Identifier)*)? ~ ")" }
+function_clause             =  { function_args ~ ":"~ ReturnType ~ IGNORED* ~ function_block ~ IGNORED*  }
+function_block              =  { "do" ~ IGNORED* ~ Expr* ~ IGNORED* ~ "end" }
+ReturnType = {"Int" | "Bool" | "String" }
 Literal = { Str | Integer | Boolean }
 
 Variable = { "var" ~ IGNORED* ~ Identifier ~ (IGNORED* ~ "=" ~ IGNORED* ~ Expr)? }
@@ -15,17 +20,19 @@ Boolean = @{ True | False }
 True = { "true" }
 False = { "false" }
 
+reserved =  { "end" | "let" | "true" | "false" | "else" | "def" | "defp" | "defs" | "do" | "type" | "trait" }
 Assignment = { "let" ~ IGNORED* ~ Identifier ~ IGNORED* ~ "=" ~ IGNORED* ~ Expr }
-Identifier = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+Identifier = @{ !reserved ~ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 
 Str = @{ "'" ~ ( "''" | (!"'" ~ ANY) )* ~ "'" }
 
 Integer = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 
 Unary = { Operator ~ Literal }
-/* Binary = { Literal ~ (Operator ~ Literal)* } */
+
 Operator = { "+" | "-" | "!"} 
 
 WHITESPACE = _{ " " | "\t" | "\\\n" }
 
 EOF = _{ "\n" | ";" | EOI }
+
